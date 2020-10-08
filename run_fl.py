@@ -43,17 +43,19 @@ def read_options():
     # flags.DEFINE_integer('server_decay_epochs', 25, 'Number of epochs before decaying the learning rate.')
     # flags.DEFINE_float('server_lr_decay', 0.1, 'How much to decay the learning rate by at each stage.')
 
-    flags.DEFINE_integer('clients_per_round', 10, 'Number of clients for each communication round.')
+    flags.DEFINE_integer('clients_per_round', 100, 'Number of clients for each communication round.')
     flags.DEFINE_integer('num_epochs', 1, 'Number of epochs to local train.')
     flags.DEFINE_integer('num_round', 2, 'Number of communication round.')
 
     # compression options
     flags.DEFINE_enum('compressor', 'none', ['none', 'signSGD', 'random_drop', 'topK', 'unbiased_drop'], 'Which model to use for classification.')
     flags.DEFINE_float('compress_factor', 0.0, 'gradients compression factor')
+    flags.DEFINE_bool('error_feedback', True, 'use error feedback or not')
 
     # modle options
-    flags.DEFINE_enum('model', 'cnn', ['cnn', 'lstm', 'resnet18', 'vgg11'], 'Which model to use for classification.')
+    flags.DEFINE_enum('model', 'cnn', ['2nn', 'cnn', 'lstm', 'resnet18', 'vgg11'], 'Which model to use for classification.')
 
+    # dataset and non iid details
     flags.DEFINE_string(
         'dataset', 'mnist',
         'Dataset name. Root name of the output directory: mnist, fmnist, cifar_10')
@@ -64,7 +66,10 @@ def read_options():
     flags.DEFINE_integer('device', 0, 'CUDA device.')
     flags.DEFINE_bool('gpu', True, 'GPU or not, default to use GPU')
 
-    flags.DEFINE_bool('error_feedback', True, 'use error feedback or not')
+    # attack/defense options
+    flags.DEFINE_enum('attack', 'none', ['none', 'byzantine', 'backdoor'], 'Which attack')
+    flags.DEFINE_float('attack_percentage', 0.0, 'attacker number %')
+    flags.DEFINE_enum('defense', 'none', ['none', 'others'], 'Which defense')
 
 
     FLAGS = flags.FLAGS
@@ -74,7 +79,7 @@ def read_options():
 
 def set_logging(log_name):
     now = datetime.now()
-    current_time = now.strftime("%H_%M_%S")
+    current_time = now.strftime("%m_%d_%H_%M_%S")
     logger = logging.getLogger('main')
     logger.setLevel(level=logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -93,14 +98,25 @@ def main():
 
     logger = set_logging(str(FLAGS.model))
 
-    experiment_name = 'model_{}_client_lr_{}_server_lr_{}_clients_per_round_{}_local_epochs_{}_num_round_{}_compressor_{}_compressRate_{}_feedback_{}'.format(
-        FLAGS.model, FLAGS.client_lr, FLAGS.server_lr, FLAGS.clients_per_round,
-        FLAGS.num_epochs, FLAGS.num_round, FLAGS.compressor, FLAGS.compress_factor, FLAGS.error_feedback
+    dataset_options = 'model_{}_dataset_{}_iids_{}'.format(
+        FLAGS.model, FLAGS.dataset, FLAGS.dataset_name
     )
-    logger.info(experiment_name)
+    optimization_options = 'client_lr_{}_server_lr_{}_clients_per_round_{}_local_epochs_{}_num_round_{}'.format(
+        FLAGS.client_lr, FLAGS.server_lr, FLAGS.clients_per_round, FLAGS.num_epochs, FLAGS.num_round
+    )
+    compression_options = 'compressor_{}_compressRate_{}_feedback_{}'.format(
+        FLAGS.compressor, FLAGS.compress_factor, FLAGS.error_feedback
+    )
+    attack_options = 'attack_{}_percentage_{}_defense_{}'.format(
+        FLAGS.attack, FLAGS.attack_percentage, FLAGS.defense
+    )
+    logger.info(dataset_options)
+    logger.info(optimization_options)
+    logger.info(compression_options)
+    logger.info(attack_options)
     # data_inf is a tuple (client_id, grops, training_data, test_data
     data_inf = read_write_data.read_data()
-    # print('>>> Read data completed')
+
     logger.info('Read data completed')
 
     fedavg_server = FedAvg.Server(data_inf)

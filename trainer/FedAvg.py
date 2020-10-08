@@ -2,10 +2,6 @@
 FedAvg class as trainer
 """
 
-# To do: model, optimizer
-# To do: client, server
-
-import multiprocessing
 import logging
 
 from models import model
@@ -89,6 +85,8 @@ class Server(object):
 		"""
 		if FLAGS.clients_per_round > self.numClients:
 			raise ValueError("clients per round should be smaller than total clients")
+		if FLAGS.clients_per_round == self.numClients:
+			return [i for i in range(self.numClients)]
 		# num_clients = min(FLAGS.clients_per_round, self)
 		np.random.seed(seed)
 		return np.random.choice(self.numClients, FLAGS.clients_per_round, replace=replace).tolist()
@@ -104,7 +102,6 @@ class Server(object):
 
 		deltas = []
 		metrics = []
-
 		server_flat_params = self.get_flat_model_params()
 
 		i = 0
@@ -127,7 +124,6 @@ class Server(object):
 				    metric['delta_norm'], metric['delta_min'], metric['delta_max'],
 					metric['error_norm'], metric['error_min'], metric['error_max'],
 					metric['train_loss'], metric['train_acc'] * 100, metric['time']))
-
 		return deltas, metrics
 
 
@@ -140,8 +136,8 @@ class Server(object):
 		previous_para = self.get_flat_model_params()
 		averaged_delta = torch.zeros_like(previous_para)
 		for num_samples, client_delta in deltas:
-			num += 1
-			averaged_delta += client_delta
+			num += num_samples
+			averaged_delta += client_delta * num_samples
 		averaged_delta /= num
 		# new_para = previous_para + FLAGS.server_lr * averaged_delta
 		return averaged_delta
