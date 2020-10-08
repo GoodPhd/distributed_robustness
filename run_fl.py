@@ -4,6 +4,7 @@ federated learning FedAvg with both client side and server side optimizer
 
 import os
 import sys
+from datetime import datetime
 
 from absl import flags
 import logging
@@ -28,10 +29,10 @@ def read_options():
     """
     flags.DEFINE_string('client_optimizer', 'sgd', 'name of the client optimizer.')
     flags.DEFINE_float('client_lr', 0.1, 'learning rate.')
-    flags.DEFINE_enum('client_lr_schedule', 'stepLR', ['constant', 'stepLR'],
-                      'learning rate schedule of client.')
-    flags.DEFINE_integer('client_decay_epochs', 25, 'Number of epochs before decaying the learning rate.')
-    flags.DEFINE_float('client_lr_decay', 0.5, 'How much to decay the learning rate by at each stage.')
+    # flags.DEFINE_enum('client_lr_schedule', 'stepLR', ['constant', 'stepLR'],
+    #                   'learning rate schedule of client.')
+    # flags.DEFINE_integer('client_decay_epochs', 25, 'Number of epochs before decaying the learning rate.')
+    # flags.DEFINE_float('client_lr_decay', 0.5, 'How much to decay the learning rate by at each stage.')
 
     flags.DEFINE_integer('client_batch_size', 64, 'Size of batches for training and eval.')
 
@@ -43,13 +44,14 @@ def read_options():
     # flags.DEFINE_float('server_lr_decay', 0.1, 'How much to decay the learning rate by at each stage.')
 
     flags.DEFINE_integer('clients_per_round', 10, 'Number of clients for each communication round.')
-    flags.DEFINE_integer('num_epochs', 2, 'Number of epochs to local train.')
+    flags.DEFINE_integer('num_epochs', 1, 'Number of epochs to local train.')
     flags.DEFINE_integer('num_round', 2, 'Number of communication round.')
 
+    # compression options
     flags.DEFINE_enum('compressor', 'none', ['none', 'signSGD', 'random_drop', 'topK', 'unbiased_drop'], 'Which model to use for classification.')
     flags.DEFINE_float('compress_factor', 0.0, 'gradients compression factor')
 
-    # flags.DEFINE_string('model', 'cnn', 'name of the model.')
+    # modle options
     flags.DEFINE_enum('model', 'cnn', ['cnn', 'lstm', 'resnet18', 'vgg11'], 'Which model to use for classification.')
 
     flags.DEFINE_string(
@@ -71,11 +73,13 @@ def read_options():
         FLAGS.gpu = False
 
 def set_logging(log_name):
+    now = datetime.now()
+    current_time = now.strftime("%H_%M_%S")
     logger = logging.getLogger('main')
     logger.setLevel(level=logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     mkdir('log')
-    file_handler = logging.FileHandler('log/'+log_name)
+    file_handler = logging.FileHandler('log/' + log_name + current_time)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     return logger
