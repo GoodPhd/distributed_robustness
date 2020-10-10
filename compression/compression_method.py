@@ -20,6 +20,13 @@ def random_drop_sparsification(delta):
 	compressed_delta = torch.where(condition, delta, zero_)
 	return compressed_delta
 
+def uniform_random_drop(delta, condition):
+	zero_ = torch.zeros_like(delta)
+	if FLAGS.gpu:
+		condition = condition.to(device='cuda')
+	compressed_delta = torch.where(condition, delta, zero_)
+	return compressed_delta
+
 def unbiased_drop_sparsification(delta):
 	zero_ = torch.zeros_like(delta)
 	condition = torch.rand(delta.size()) >= FLAGS.compress_factor
@@ -36,10 +43,11 @@ def top_value_sparsification(delta):
 	delta.put_(index, zeros_)
 	return delta
 
-def get_compression(delta):
+def get_compression(delta,condition, **kwargs):
 	"""
 
 	:param delta:
+	:index_set: uniform set for all workers to random drop
 	:return:
 	"""
 	# delta_ = delta.clone()
@@ -50,6 +58,9 @@ def get_compression(delta):
 	elif FLAGS.compressor == 'random_drop':
 		delta_ = delta.clone()
 		return random_drop_sparsification(delta_)
+	elif FLAGS.compressor == 'uniform_drop':
+		delta_ = delta.clone()
+		return uniform_random_drop(delta_, condition=condition)
 	elif FLAGS.compressor == 'unbiased_drop':
 		delta_ = delta.clone()
 		return unbiased_drop_sparsification(delta_)

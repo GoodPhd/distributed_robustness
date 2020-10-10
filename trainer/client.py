@@ -88,7 +88,7 @@ class Client(object):
         return flat_params.detach()
 
 
-    def local_train(self, flat_params, **kwargs):
+    def local_train(self, flat_params, condition=None, **kwargs):
         """Solves local optimization problem
 
         Returns:
@@ -149,11 +149,11 @@ class Client(object):
 
         if FLAGS.error_feedback:
             return_delta_temp = return_delta + self.error
-            return_delta = compression_method.get_compression(return_delta_temp)
+            return_delta = compression_method.get_compression(return_delta_temp, condition=condition)
             self.error = return_delta_temp - return_delta
         else:
             # return_delta_temp = return_delta
-            return_delta = compression_method.get_compression(return_delta)
+            return_delta = compression_method.get_compression(return_delta, condition=condition)
 
         return_dict = {}
 
@@ -187,7 +187,7 @@ class Client(object):
         return_dict.update(error_dict)
 
 
-        return (len(self.train_data), return_delta), return_dict, self.error
+        return [len(self.train_data), return_delta], return_dict, self.error
 
 
     def local_test(self, flat_params, use_eval_data=True):

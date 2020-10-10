@@ -7,6 +7,7 @@ import logging
 from models import model
 from trainer import client
 from utils import read_write_data
+from robust import attack, defense
 
 from utils.torch_utils import get_flat_params_from, set_flat_params_to
 
@@ -92,7 +93,7 @@ class Server(object):
 		return np.random.choice(self.numClients, FLAGS.clients_per_round, replace=replace).tolist()
 
 
-	def local_train(self, client_list, round_num):
+	def local_train(self, client_list, round_num, condition=None):
 		"""
 		local train process for each client
 		:return:
@@ -109,7 +110,7 @@ class Server(object):
 			if round_num == 0:
 				self.errorfeedback[cid] = torch.zeros_like(self.get_flat_model_params())
 			self.client.reset(self.clientData[cid], self.errorfeedback[cid], round_num)
-			delta, metric, self.errorfeedback[cid] = self.client.local_train(server_flat_params)
+			delta, metric, self.errorfeedback[cid] = self.client.local_train(server_flat_params, condition=condition)
 			deltas.append(delta)
 			metrics.append(metric)
 
@@ -154,12 +155,27 @@ class Server(object):
 			self.logger.debug('sample clients completed')
 
 			t0 = time.time()
-			deltas, metrics = self.local_train(client_list, round_num)
+			if FLAGS.compressor == 'uniform_drop':
+				condition = torch.rand(self.get_flat_model_params().size()) >= FLAGS.compress_factor
+				deltas, metrics = self.local_train(client_list, round_num, condition=condition)
+			else:
+				deltas, metrics = self.local_train(client_list, round_num)
+
 			self.output_metric.add_extra_stats(round_num, metrics)
 			self.logger.info("training time for one communication round: %f", (time.time()-t0))
 
+			if FLAGS.attack == 'byzantine':
+				attack.norm_attack(deltas, num_std=1.5)
+
 			# aggregate clients delta and update the server model
-			average_delta = self.aggregate(deltas)
+			if FLAGS.defense == 'none':
+				average_delta = self.aggregate(deltas)
+			elif FLAGS.defense == 'krum':
+				average_delta = defense.krum(deltas)
+			else:
+				raise ValueError("invalid defense")
+
+
 			self.update_server_state(average_delta)
 
 			self.logger.debug('communication round %d finished.', )

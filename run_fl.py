@@ -48,8 +48,8 @@ def read_options():
     flags.DEFINE_integer('num_round', 2, 'Number of communication round.')
 
     # compression options
-    flags.DEFINE_enum('compressor', 'none', ['none', 'signSGD', 'random_drop', 'topK', 'unbiased_drop'], 'Which model to use for classification.')
-    flags.DEFINE_float('compress_factor', 0.0, 'gradients compression factor')
+    flags.DEFINE_enum('compressor', 'uniform_drop', ['none', 'signSGD', 'random_drop', 'topK', 'uniform_drop'], 'Which model to use for classification.')
+    flags.DEFINE_float('compress_factor', 0.1, 'gradients compression factor')
     flags.DEFINE_bool('error_feedback', True, 'use error feedback or not')
 
     # modle options
@@ -67,9 +67,9 @@ def read_options():
     flags.DEFINE_bool('gpu', True, 'GPU or not, default to use GPU')
 
     # attack/defense options
-    flags.DEFINE_enum('attack', 'none', ['none', 'byzantine', 'backdoor'], 'Which attack')
-    flags.DEFINE_float('attack_percentage', 0.0, 'attacker number %')
-    flags.DEFINE_enum('defense', 'none', ['none', 'others'], 'Which defense')
+    flags.DEFINE_enum('attack', 'byzantine', ['none', 'byzantine', 'backdoor'], 'Which attack')
+    flags.DEFINE_float('attack_percentage', 0.2, 'attacker number %')
+    flags.DEFINE_enum('defense', 'krum', ['none', 'krum'], 'Which defense')
 
 
     FLAGS = flags.FLAGS
@@ -81,7 +81,7 @@ def set_logging(log_name):
     now = datetime.now()
     current_time = now.strftime("%m_%d_%H_%M_%S")
     logger = logging.getLogger('main')
-    logger.setLevel(level=logging.INFO)
+    logger.setLevel(level=logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     mkdir('log')
     file_handler = logging.FileHandler('log/' + log_name + current_time)
