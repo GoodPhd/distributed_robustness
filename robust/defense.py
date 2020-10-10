@@ -23,6 +23,18 @@ def krum(x):
 	min_index = score.index(min(score))
 	return x[min_index][1]
 
+def coordinate_median(x):
+	'''
+
+	:param x:
+	:return:
+	'''
+	xList = []
+	for num_samples, x_grad in x:
+		xList.append(x_grad)
+	xList = torch.stack(xList)
+	return torch.median(xList, dim=0).values
+
 
 
 
@@ -30,3 +42,4 @@ def krum(x):
 # for i in range(10):
 # 	x.append([i, torch.randn(4)])
 # print(x)
+# print(coordinate_median(x))
