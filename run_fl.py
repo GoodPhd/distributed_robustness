@@ -43,7 +43,7 @@ def read_options():
     # flags.DEFINE_integer('server_decay_epochs', 25, 'Number of epochs before decaying the learning rate.')
     # flags.DEFINE_float('server_lr_decay', 0.1, 'How much to decay the learning rate by at each stage.')
 
-    flags.DEFINE_integer('clients_per_round', 100, 'Number of clients for each communication round.')
+    flags.DEFINE_integer('clients_per_round', 10, 'Number of clients for each communication round.')
     flags.DEFINE_integer('num_epochs', 1, 'Number of epochs to local train.')
     flags.DEFINE_integer('num_round', 2, 'Number of communication round.')
 
@@ -60,7 +60,7 @@ def read_options():
         'dataset', 'mnist',
         'Dataset name. Root name of the output directory: mnist, fmnist, cifar_10')
     flags.DEFINE_string(
-        'dataset_name', 'all_data_1_digits_1_niid',
+        'dataset_name', 'all_data_1_digits_10_niid',
         'name of the data file for different partition for non-iid data')
 
     flags.DEFINE_integer('device', 0, 'CUDA device.')
@@ -77,14 +77,17 @@ def read_options():
     if not torch.cuda.is_available():
         FLAGS.gpu = False
 
-def set_logging(log_name):
-    now = datetime.now()
-    current_time = now.strftime("%m_%d_%H_%M_%S")
+def set_logging(FLAGS):
     logger = logging.getLogger('main')
-    logger.setLevel(level=logging.DEBUG)
+    logger.setLevel(level=logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     mkdir('log')
-    file_handler = logging.FileHandler('log/' + log_name + current_time)
+    exp_name = '{}_client_lr_{}_server_lr_{}_clients_per_round_{}_local_epochs_{}_num_round_{}_compressor_{}_compression_{}_Feedback_{}_attack_{}_perc_{}_defense_{}'.format(
+        FLAGS.model, FLAGS.client_lr, FLAGS.server_lr, FLAGS.clients_per_round,
+        FLAGS.num_epochs, FLAGS.num_round, FLAGS.compressor, FLAGS.compress_factor, FLAGS.error_feedback,
+        FLAGS.attack, FLAGS.attack_percentage, FLAGS.defense
+    )
+    file_handler = logging.FileHandler('log/' + exp_name)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     return logger
@@ -96,7 +99,7 @@ def main():
     FLAGS = flags.FLAGS
 
 
-    logger = set_logging(str(FLAGS.model))
+    logger = set_logging(FLAGS)
 
     dataset_options = 'model_{}_dataset_{}_iids_{}'.format(
         FLAGS.model, FLAGS.dataset, FLAGS.dataset_name
@@ -111,9 +114,13 @@ def main():
         FLAGS.attack, FLAGS.attack_percentage, FLAGS.defense
     )
     logger.info(dataset_options)
+    print(dataset_options)
     logger.info(optimization_options)
+    print(optimization_options)
     logger.info(compression_options)
+    print(compression_options)
     logger.info(attack_options)
+    print(attack_options)
     # data_inf is a tuple (client_id, grops, training_data, test_data
     data_inf = read_write_data.read_data()
 

@@ -8,6 +8,7 @@ from models import model
 from trainer import client
 from utils import read_write_data
 from robust import attack, defense
+from compression import compression_method
 
 from utils.torch_utils import get_flat_params_from, set_flat_params_to
 
@@ -92,6 +93,27 @@ class Server(object):
 		np.random.seed(seed)
 		return np.random.choice(self.numClients, FLAGS.clients_per_round, replace=replace).tolist()
 
+	def updateMetric(self, cid, delta, compressed_delta, compressed_rate, metric):
+		'''
+		update error, update statis of delta, error, compression rate.
+		:param delta:
+		:param compressed_delta:
+		:param compressed_rate:
+		:return:
+		'''
+		self.errorfeedback[cid] = compressed_delta - delta
+		delta_dict = {"delta_norm": torch.norm(compressed_delta).item(),
+		              "delta_max": compressed_delta.max().item(),
+		              "delta_min": compressed_delta.min().item()}
+		metric.update(delta_dict)
+
+		error_dict = {"error_norm": torch.norm(self.errorfeedback[cid]).item(),
+		              "error_max": self.errorfeedback[cid].max().item(),
+		              "error_min": self.errorfeedback[cid].min().item()}
+		metric.update(error_dict)
+
+		compression_dict = {"compression_rate": compressed_rate}
+		metric.update(compression_dict)
 
 	def local_train(self, client_list, round_num, condition=None):
 		"""
@@ -110,7 +132,10 @@ class Server(object):
 			if round_num == 0:
 				self.errorfeedback[cid] = torch.zeros_like(self.get_flat_model_params())
 			self.client.reset(self.clientData[cid], self.errorfeedback[cid], round_num)
-			delta, metric, self.errorfeedback[cid] = self.client.local_train(server_flat_params, condition=condition)
+			delta, metric = self.client.local_train(server_flat_params)
+			compressed_delta, compressed_rate = compression_method.get_compression(delta[1], condition=condition)
+			self.updateMetric(cid, delta[1], compressed_delta, compressed_rate, metric)
+
 			deltas.append(delta)
 			metrics.append(metric)
 
@@ -125,6 +150,16 @@ class Server(object):
 				    metric['delta_norm'], metric['delta_min'], metric['delta_max'],
 					metric['error_norm'], metric['error_min'], metric['error_max'],
 					metric['train_loss'], metric['train_acc'] * 100, metric['time']))
+			print("Round: {:>2d} | CID: {: >3d} ({:>2d}/{:>2d})| "
+			                 "Param: norm {:>.4f} ({:>.4f}->{:>.4f})| "
+			                 "Delta: norm {:>.4f} ({:>.4f}->{:>.4f})| "
+			                 "Error: norm {:>.4f} ({:>.4f}->{:>.4f})| "
+			                 "Loss {:>.4f} | Acc {:>5.2f}% | Time: {:>.2f}s".format(
+				round_num, metric['id'], i, FLAGS.clients_per_round,
+				metric['grad_norm'], metric['grad_min'], metric['grad_max'],
+				metric['delta_norm'], metric['delta_min'], metric['delta_max'],
+				metric['error_norm'], metric['error_min'], metric['error_max'],
+				metric['train_loss'], metric['train_acc'] * 100, metric['time']))
 		return deltas, metrics
 
 
@@ -195,6 +230,8 @@ class Server(object):
 		stats = self.local_test(use_eval_data=False)
 		self.logger.info('>>> Training info in Round: {: >4d} / Acc: {:.3%} / Loss: {:.4f}.'.format(
 			round_num, stats['acc'], stats['loss']))
+		print('>>> Training info in Round: {: >4d} / Acc: {:.3%} / Loss: {:.4f}.'.format(
+			round_num, stats['acc'], stats['loss']))
 		self.output_metric.add_training_stats(round_num, stats)
 
 
@@ -205,7 +242,9 @@ class Server(object):
 		:return:
 		"""
 		stats = self.local_test(use_eval_data = True)
-		self.logger.info('Testing info in Round: {: >4d} / Acc: {:.3%} / Loss: {:.4f}.'.format(
+		self.logger.info('>>>Testing info in Round: {: >4d} / Acc: {:.3%} / Loss: {:.4f}.'.format(
+			round_num, stats['acc'], stats['loss']))
+		print('>>>Testing info in Round: {: >4d} / Acc: {:.3%} / Loss: {:.4f}.'.format(
 			round_num, stats['acc'], stats['loss']))
 		self.output_metric.add_test_stats(round_num, stats)
 

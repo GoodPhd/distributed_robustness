@@ -43,3 +43,6 @@ def coordinate_median(x):
 # 	x.append([i, torch.randn(4)])
 # print(x)
 # print(coordinate_median(x))
+# x = torch.rand(10) >= 0.1
+# print(x)
+# print((x==0).sum() / float(len(x)))

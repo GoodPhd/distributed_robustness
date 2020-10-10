@@ -10,7 +10,7 @@ import logging
 from utils.flops_counter import get_model_complexity_info
 from models import model
 from optimizer import optimizers
-from compression import compression_method
+
 
 from utils.torch_utils import get_flat_params_from, set_flat_params_to
 import torch.nn as nn
@@ -148,15 +148,15 @@ class Client(object):
         return_delta = local_new_model - self.previous_model
 
         if FLAGS.error_feedback:
-            return_delta_temp = return_delta + self.error
-            return_delta = compression_method.get_compression(return_delta_temp, condition=condition)
-            self.error = return_delta_temp - return_delta
-        else:
-            # return_delta_temp = return_delta
-            return_delta = compression_method.get_compression(return_delta, condition=condition)
+            return_delta = return_delta + self.error
+            # return_delta = compression_method.get_compression(return_delta_temp, condition=condition)
+            # self.error = return_delta_temp - return_delta
+        # else:
+        #     # return_delta_temp = return_delta
+        #     return_delta = compression_method.get_compression(return_delta, condition=condition)
+        # return return_delta
 
         return_dict = {}
-
         # bytes_w = self.model_bytes
         # comp = self.num_epochs * train_total * self.flops
         # bytes_r = self.model_bytes
@@ -166,28 +166,29 @@ class Client(object):
         #
         stats_dict = {'id': self.cid, "time": round(time.time() - t0, 2)}
         return_dict.update(stats_dict)
-        #
+
         param_dict = {"grad_norm": torch.norm(local_new_model).item(),
                       "grad_max": local_new_model.max().item(),
-                      "grad_min": local_new_model.min().item()}
+                      "grad_min": local_new_model.min().item()
+                      }
         return_dict.update(param_dict)
-
-        delta_dict = {"delta_norm": torch.norm(return_delta).item(),
-                      "delta_max": return_delta.max().item(),
-                      "delta_min": return_delta.min().item()}
-        return_dict.update(delta_dict)
-
+        #
+        # delta_dict = {"delta_norm": torch.norm(return_delta).item(),
+        #               "delta_max": return_delta.max().item(),
+        #               "delta_min": return_delta.min().item()}
+        # return_dict.update(delta_dict)
+        #
         loss_dict = {"train_loss": train_loss/train_total,
                      "train_acc": train_acc/train_total}
         return_dict.update(loss_dict)
-
-        error_dict = {"error_norm": torch.norm(self.error).item(),
-                      "error_max": self.error.max().item(),
-                      "error_min": self.error.min().item()}
-        return_dict.update(error_dict)
-
-
-        return [len(self.train_data), return_delta], return_dict, self.error
+        #
+        # error_dict = {"error_norm": torch.norm(self.error).item(),
+        #               "error_max": self.error.max().item(),
+        #               "error_min": self.error.min().item()}
+        # return_dict.update(error_dict)
+        #
+        #
+        return [len(self.train_data), return_delta], return_dict
 
 
     def local_test(self, flat_params, use_eval_data=True):
