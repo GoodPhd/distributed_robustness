@@ -48,7 +48,7 @@ def read_options():
     flags.DEFINE_integer('num_round', 2, 'Number of communication round.')
 
     # compression options
-    flags.DEFINE_enum('compressor', 'uniform_drop', ['none', 'signSGD', 'random_drop', 'topK', 'uniform_drop'], 'Which model to use for classification.')
+    flags.DEFINE_enum('compressor', 'none', ['none', 'signSGD', 'random_drop', 'topK', 'uniform_drop'], 'Which model to use for classification.')
     flags.DEFINE_float('compress_factor', 0.1, 'gradients compression factor')
     flags.DEFINE_bool('error_feedback', True, 'use error feedback or not')
 

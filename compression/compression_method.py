@@ -43,7 +43,7 @@ def top_value_sparsification(delta):
 	delta.put_(index, zeros_)
 	return delta, (condition==0).sum() / float(len(condition))
 
-def get_compression(delta,condition, **kwargs):
+def get_compression(delta, condition, **kwargs):
 	"""
 
 	:param delta:
@@ -52,7 +52,7 @@ def get_compression(delta,condition, **kwargs):
 	"""
 	# delta_ = delta.clone()
 	if FLAGS.compressor == 'none':
-		return delta
+		return delta, 0
 	elif FLAGS.compressor == 'signSGD':
 		return signSGD(delta)
 	elif FLAGS.compressor == 'random_drop':

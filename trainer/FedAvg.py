@@ -127,18 +127,25 @@ class Server(object):
 		metrics = []
 		server_flat_params = self.get_flat_model_params()
 
-		i = 0
 		for cid in client_list:
 			if round_num == 0:
 				self.errorfeedback[cid] = torch.zeros_like(self.get_flat_model_params())
 			self.client.reset(self.clientData[cid], self.errorfeedback[cid], round_num)
 			delta, metric = self.client.local_train(server_flat_params)
-			compressed_delta, compressed_rate = compression_method.get_compression(delta[1], condition=condition)
-			self.updateMetric(cid, delta[1], compressed_delta, compressed_rate, metric)
+			# compressed_delta, compressed_rate = compression_method.get_compression(delta[1], condition=condition)
+			# self.updateMetric(cid, delta[1], compressed_delta, compressed_rate, metric)
 
 			deltas.append(delta)
 			metrics.append(metric)
 
+		if FLAGS.attack == 'byzantine':
+			attack.norm_attack(deltas, num_std=1.5)
+
+		i = 0
+		for cid, delta, metric in zip(client_list, deltas, metrics):
+			compressed_delta, compressed_rate = compression_method.get_compression(delta[1], condition=condition)
+			self.updateMetric(cid, delta[1], compressed_delta, compressed_rate, metric)
+			delta[1] = compressed_delta
 			i += 1
 			self.logger.info("Round: {:>2d} | CID: {: >3d} ({:>2d}/{:>2d})| "
 				    "Param: norm {:>.4f} ({:>.4f}->{:>.4f})| "
@@ -160,6 +167,8 @@ class Server(object):
 				metric['delta_norm'], metric['delta_min'], metric['delta_max'],
 				metric['error_norm'], metric['error_min'], metric['error_max'],
 				metric['train_loss'], metric['train_acc'] * 100, metric['time']))
+
+
 		return deltas, metrics
 
 
@@ -199,8 +208,6 @@ class Server(object):
 			self.output_metric.add_extra_stats(round_num, metrics)
 			self.logger.info("training time for one communication round: %f", (time.time()-t0))
 
-			if FLAGS.attack == 'byzantine':
-				attack.norm_attack(deltas, num_std=1.5)
 
 			# aggregate clients delta and update the server model
 			if FLAGS.defense == 'none':
