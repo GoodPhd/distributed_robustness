@@ -140,6 +140,10 @@ class Server(object):
 
 		if FLAGS.attack == 'byzantine':
 			attack.norm_attack(deltas, num_std=1.5)
+		elif FLAGS.attack == 'dimension':
+			attack.dimension_attack(deltas, para=1.0)
+		elif FLAGS.attack == 'hybrid':
+			attack.hybrid_attack(deltas, para=1.0, num_std=1.5)
 
 		i = 0
 		for cid, delta, metric in zip(client_list, deltas, metrics):
@@ -214,6 +218,8 @@ class Server(object):
 				average_delta = self.aggregate(deltas)
 			elif FLAGS.defense == 'krum':
 				average_delta = defense.krum(deltas)
+			elif FLAGS.defense == 'coordinate':
+				average_delta = defense.coordinate_median(deltas)
 			else:
 				raise ValueError("invalid defense")
 

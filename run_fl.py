@@ -4,7 +4,6 @@ federated learning FedAvg with both client side and server side optimizer
 
 import os
 import sys
-from datetime import datetime
 
 from absl import flags
 import logging
@@ -67,9 +66,9 @@ def read_options():
     flags.DEFINE_bool('gpu', True, 'GPU or not, default to use GPU')
 
     # attack/defense options
-    flags.DEFINE_enum('attack', 'byzantine', ['none', 'byzantine', 'backdoor'], 'Which attack')
+    flags.DEFINE_enum('attack', 'dimension', ['none', 'byzantine', 'backdoor', 'hybrid', 'dimension'], 'Which attack')
     flags.DEFINE_float('attack_percentage', 0.2, 'attacker number %')
-    flags.DEFINE_enum('defense', 'krum', ['none', 'krum'], 'Which defense')
+    flags.DEFINE_enum('defense', 'coordinate', ['none', 'krum', 'coordinate'], 'Which defense')
 
 
     FLAGS = flags.FLAGS
