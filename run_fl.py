@@ -52,7 +52,7 @@ def read_options():
     flags.DEFINE_bool('error_feedback', True, 'use error feedback or not')
 
     # modle options
-    flags.DEFINE_enum('model', 'cnn', ['2nn', 'cnn', 'lstm', 'resnet18', 'vgg11'], 'Which model to use for classification.')
+    flags.DEFINE_enum('model', 'cnn', ['ccnn', 'cnn', 'lstm', 'resnet18', 'vgg11'], 'Which model to use for classification.')
 
     # dataset and non iid details
     flags.DEFINE_string(

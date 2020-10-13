@@ -161,16 +161,16 @@ class Server(object):
 				    metric['delta_norm'], metric['delta_min'], metric['delta_max'],
 					metric['error_norm'], metric['error_min'], metric['error_max'],
 					metric['train_loss'], metric['train_acc'] * 100, metric['time']))
-			print("Round: {:>2d} | CID: {: >3d} ({:>2d}/{:>2d})| "
-			                 "Param: norm {:>.4f} ({:>.4f}->{:>.4f})| "
-			                 "Delta: norm {:>.4f} ({:>.4f}->{:>.4f})| "
-			                 "Error: norm {:>.4f} ({:>.4f}->{:>.4f})| "
-			                 "Loss {:>.4f} | Acc {:>5.2f}% | Time: {:>.2f}s".format(
-				round_num, metric['id'], i, FLAGS.clients_per_round,
-				metric['grad_norm'], metric['grad_min'], metric['grad_max'],
-				metric['delta_norm'], metric['delta_min'], metric['delta_max'],
-				metric['error_norm'], metric['error_min'], metric['error_max'],
-				metric['train_loss'], metric['train_acc'] * 100, metric['time']))
+			# print("Round: {:>2d} | CID: {: >3d} ({:>2d}/{:>2d})| "
+			#                  "Param: norm {:>.4f} ({:>.4f}->{:>.4f})| "
+			#                  "Delta: norm {:>.4f} ({:>.4f}->{:>.4f})| "
+			#                  "Error: norm {:>.4f} ({:>.4f}->{:>.4f})| "
+			#                  "Loss {:>.4f} | Acc {:>5.2f}% | Time: {:>.2f}s".format(
+			# 	round_num, metric['id'], i, FLAGS.clients_per_round,
+			# 	metric['grad_norm'], metric['grad_min'], metric['grad_max'],
+			# 	metric['delta_norm'], metric['delta_min'], metric['delta_max'],
+			# 	metric['error_norm'], metric['error_min'], metric['error_max'],
+			# 	metric['train_loss'], metric['train_acc'] * 100, metric['time']))
 
 
 		return deltas, metrics
